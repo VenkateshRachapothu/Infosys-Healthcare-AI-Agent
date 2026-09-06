@@ -21,6 +21,7 @@ type TriageData = {
 
 export default function AdminReports() {
   const [reports, setReports] = useState<TriageData[]>([]);
+  const [activeDoctors, setActiveDoctors] = useState<{id: string, name: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [urgencyFilter, setUrgencyFilter] = useState('All');
   const [doctorFilter, setDoctorFilter] = useState('All');
@@ -57,6 +58,21 @@ export default function AdminReports() {
 
   const fetchReports = async () => {
     setLoading(true);
+    
+    // Fetch all active doctors for the filter dropdown
+    const { data: docsData } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .eq('role', 'doctor')
+      .eq('is_active', true);
+      
+    if (docsData) {
+      setActiveDoctors(docsData.map(d => ({
+        id: d.id, 
+        name: d.full_name.replace(/\s*\((Patient|Doctor|Admin|patient|doctor|admin)\)/gi, '')
+      })));
+    }
+
     const { data, error } = await supabase
       .from('triages')
       .select(`
@@ -97,7 +113,7 @@ export default function AdminReports() {
     return matchUrgency && matchDoctor && matchDisease;
   });
 
-  const uniqueDoctors = ['All', ...Array.from(new Set(reports.map(r => r.doctorName).filter(Boolean)))];
+  const uniqueDoctors = ['All', 'Unassigned', ...activeDoctors.map(d => d.name)];
 
   const totalPages = Math.ceil(filteredReports.length / ITEMS_PER_PAGE) || 1;
   const paginatedReports = filteredReports.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);

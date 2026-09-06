@@ -9,6 +9,7 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminReports from './pages/AdminReports';
 import AdminCreateDoctor from './pages/AdminCreateDoctor';
+import AdminUserList from './pages/AdminUserList';
 import Settings from './pages/Settings';
 import Sidebar from './components/Sidebar';
 import { Menu } from 'lucide-react';
@@ -46,6 +47,7 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/admin/create-doctor" element={<AdminCreateDoctor />} />
+            <Route path="/admin/users" element={<AdminUserList />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
           </div>

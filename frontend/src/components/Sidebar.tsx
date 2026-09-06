@@ -88,6 +88,13 @@ export default function Sidebar({ isOpen = false, setIsOpen = (_v: boolean) => {
               <UserPlus className={`w-5 h-5 ${location.pathname === '/admin/create-doctor' ? 'text-blue-600' : 'text-slate-400'}`} />
               Create Doctor ID
             </Link>
+            <Link 
+              to="/admin/users" 
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${location.pathname === '/admin/users' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+            >
+              <UserCircle className={`w-5 h-5 ${location.pathname === '/admin/users' ? 'text-blue-600' : 'text-slate-400'}`} />
+              User Directory
+            </Link>
           </>
         ) : role === 'doctor' ? (
           <>
