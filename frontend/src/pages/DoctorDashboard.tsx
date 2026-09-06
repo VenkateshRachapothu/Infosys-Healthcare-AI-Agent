@@ -67,7 +67,7 @@ export default function DoctorDashboard() {
     setLoadingAppts(true);
     const { data, error } = await supabase
       .from('appointments')
-      .select('*, users!appointments_patient_id_fkey(full_name), triage_reports(symptoms, urgency_level, recommended_department, ai_explanation)')
+      .select('*, users!appointments_patient_id_fkey(full_name), triages!appointments_triage_report_id_fkey(symptoms, urgency, department, analysis)')
       .eq('doctor_id', docId)
       .eq('status', 'scheduled')
       .order('created_at', { ascending: false });
@@ -80,19 +80,35 @@ export default function DoctorDashboard() {
         .eq('doctor_id', docId)
         .eq('status', 'scheduled')
         .order('created_at', { ascending: false });
-      if (fallbackData) setAppointments(fallbackData);
+      if (fallbackData) {
+        const formatted = fallbackData.map((item: any) => ({
+          id: item.id,
+          name: item.users?.full_name || 'Unknown Patient',
+          urgency: item.triage_reports?.urgency_level || 'Unknown',
+          dept: item.department,
+          time: item.appointment_time,
+          isAppt: true,
+          report: {
+            symptoms: ['Not specified'],
+            duration: 'Not specified',
+            analysis: 'No analysis available',
+            image_data: null
+          }
+        }));
+        setAppointments(formatted);
+      }
     } else if (data) {
       const formatted = data.map((item: any) => ({
         id: item.id,
         name: item.users?.full_name || 'Unknown Patient',
-        urgency: item.triage_reports?.urgency_level || 'Unknown',
+        urgency: item.triages?.urgency || 'Unknown',
         dept: item.department,
         time: item.appointment_time,
         isAppt: true,
         report: {
-          symptoms: item.triage_reports?.symptoms ? item.triage_reports.symptoms.split(',') : ['Not specified'],
+          symptoms: item.triages?.symptoms ? item.triages.symptoms.split(',') : ['Not specified'],
           duration: 'Not specified',
-          analysis: item.triage_reports?.ai_explanation || 'No analysis available',
+          analysis: item.triages?.analysis || 'No analysis available',
           image_data: null
         }
       }));
