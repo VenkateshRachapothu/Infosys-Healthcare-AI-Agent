@@ -83,6 +83,7 @@ export default function DoctorDashboard() {
       if (fallbackData) {
         const formatted = fallbackData.map((item: any) => ({
           id: item.id,
+          patient_id: item.patient_id,
           name: item.users?.full_name || 'Unknown Patient',
           urgency: item.triage_reports?.urgency_level || 'Unknown',
           dept: item.department,
@@ -100,6 +101,7 @@ export default function DoctorDashboard() {
     } else if (data) {
       const formatted = data.map((item: any) => ({
         id: item.id,
+        patient_id: item.patient_id,
         name: item.users?.full_name || 'Unknown Patient',
         urgency: item.triages?.urgency || 'Unknown',
         dept: item.department,
