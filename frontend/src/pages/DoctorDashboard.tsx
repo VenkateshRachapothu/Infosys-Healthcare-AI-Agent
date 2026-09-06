@@ -549,7 +549,7 @@ export default function DoctorDashboard() {
                   {lockedAppts.map(appt => (
                     <div key={appt.id} className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg">
                       <span className="text-sm font-medium text-amber-800 flex items-center gap-2">
-                        <Calendar className="w-4 h-4" /> {appt.appointment_time}
+                        <Calendar className="w-4 h-4" /> {appt.time}
                       </span>
                       <button onClick={() => handleUnlockSlot(appt.id)} className="text-xs font-bold text-amber-600 hover:text-amber-800 flex items-center gap-1">
                         <Unlock className="w-3 h-3" /> Unlock
