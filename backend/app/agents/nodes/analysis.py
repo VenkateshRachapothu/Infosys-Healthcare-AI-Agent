@@ -17,8 +17,8 @@ def analysis_node(state: AgentState) -> dict:
     
     try:
         # Initialize LLM
-        from langchain_groq import ChatGroq
-        llm = ChatGroq(api_key=settings.GROQ_API_KEY, model_name="llama-3.1-8b-instant", temperature=0.2)
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY, temperature=0.2)
         
         # Define Prompt
         prompt = ChatPromptTemplate.from_messages([

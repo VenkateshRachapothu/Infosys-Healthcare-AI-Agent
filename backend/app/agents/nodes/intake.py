@@ -17,7 +17,8 @@ def intake_node(state: AgentState) -> dict:
     latest_message = messages[-1].content if messages else ""
     
     # Initialize LLM
-    llm = ChatGroq(api_key=settings.GROQ_API_KEY, model_name="llama-3.1-8b-instant")
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY)
     
     # Define structured output
     structured_llm = llm.with_structured_output(IntakeSchema)
