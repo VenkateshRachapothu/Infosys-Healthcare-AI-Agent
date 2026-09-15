@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { ShieldCheck, User, Stethoscope, Mail, Lock, UserPlus, LogIn, KeyRound, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, User, Stethoscope, Mail, Lock, UserPlus, LogIn, KeyRound, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 type AuthView = 'patient_login' | 'patient_signup' | 'forgot_password' | 'internal_login';
 
@@ -9,6 +9,7 @@ export default function Auth() {
   const [view, setView] = useState<AuthView>('patient_login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [internalRole, setInternalRole] = useState<'doctor' | 'admin' | null>(null);
   
   const [loading, setLoading] = useState(false);
@@ -19,13 +20,8 @@ export default function Auth() {
   const handleInternalDemoFill = (role: 'doctor' | 'admin') => {
     setView('internal_login');
     setInternalRole(role);
-    if (role === 'doctor') {
-      setEmail('doctor@demo.com');
-      setPassword('password123');
-    } else if (role === 'admin') {
-      setEmail('admin@demo.com');
-      setPassword('password123');
-    }
+    setEmail('');
+    setPassword('');
   };
 
   const resetState = () => {
@@ -33,6 +29,7 @@ export default function Auth() {
     setPassword('');
     setErrorMsg('');
     setSuccessMsg('');
+    setShowPassword(false);
   };
 
   const handleGoogleSignIn = async () => {
@@ -271,14 +268,21 @@ export default function Auth() {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input 
-                  type="password" 
+                  type={showPassword ? "text" : "password"} 
                   required
                   minLength={6}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-sm"
+                  className="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-sm"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
             </div>
           )}
@@ -307,16 +311,16 @@ export default function Auth() {
           <div className="mt-10 pt-8 border-t border-slate-100 relative">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-1.5 whitespace-nowrap">
               <KeyRound className="w-3.5 h-3.5" /> 
-              Internal Staff & Demo
+              Internal Staff Portals
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
               <button
                 type="button"
-                onClick={() => { resetState(); setView('patient_login'); setEmail('patient@demo.com'); setPassword('password123'); }}
+                onClick={() => { resetState(); setView('patient_login'); }}
                 className="flex-1 py-3 px-3 text-xs font-bold rounded-xl border transition-all flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
               >
-                <User className="w-4 h-4 text-blue-500" /> Patient Demo
+                <User className="w-4 h-4 text-blue-500" /> Patient
               </button>
               <button
                 type="button"

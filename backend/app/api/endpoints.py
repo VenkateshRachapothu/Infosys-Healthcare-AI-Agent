@@ -133,7 +133,7 @@ async def chat_interaction(request: ChatRequest):
                     vision_text = " ".join(p['text'] if isinstance(p, dict) and 'text' in p else str(p) for p in vision_raw)
                 else:
                     vision_text = str(vision_raw)
-                vision_context = f"\n\n[The patient has uploaded a medical image. Clinical description: {vision_text}]"
+                vision_context = f"\n\n[The patient has uploaded a medical image. Clinical description: {vision_text}. IMPORTANT: Based on this image, immediately ask the patient 2-3 specific follow-up questions to gather more context (e.g., 1. How long have you had this? 2. Is it painful or itchy?). Format your questions as a crisp numbered list.]"
             except Exception as gemini_err:
                 print(f"Gemini vision failed entirely: {gemini_err}")
                 try:
