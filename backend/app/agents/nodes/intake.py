@@ -18,7 +18,7 @@ def intake_node(state: AgentState) -> dict:
     
     # Initialize LLM
     from langchain_groq import ChatGroq
-    llm = ChatGroq(api_key=settings.GROQ_API_KEY, model_name="llama-3.1-8b-instant")
+    llm = ChatGroq(api_key=settings.GROQ_API_KEY, model_name="openai/gpt-oss-120b")
     
     # Define structured output
     structured_llm = llm.with_structured_output(IntakeSchema)
