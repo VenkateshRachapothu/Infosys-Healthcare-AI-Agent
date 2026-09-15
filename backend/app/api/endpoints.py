@@ -136,7 +136,18 @@ async def chat_interaction(request: ChatRequest):
         messages.append(HumanMessage(content=request.message + vision_context))
         
         ai_response = llm.invoke(messages)
-        reply_text = clean_think_tags(ai_response.content)
+        
+        content = ai_response.content
+        if isinstance(content, list):
+            text_parts = []
+            for part in content:
+                if isinstance(part, dict) and 'text' in part:
+                    text_parts.append(part['text'])
+                elif isinstance(part, str):
+                    text_parts.append(part)
+            reply_text = clean_think_tags(" ".join(text_parts))
+        else:
+            reply_text = clean_think_tags(str(content))
 
         try:
             supabase = get_supabase()
