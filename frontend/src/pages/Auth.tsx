@@ -133,8 +133,8 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-center bg-slate-50 font-sans text-slate-900 p-4 sm:p-6 overflow-y-auto py-12">
-      <div className="w-full max-w-[450px] mx-auto bg-white p-8 rounded-3xl shadow-xl border border-slate-100 shrink-0">
+    <div className="min-h-screen w-full flex justify-center bg-slate-50 font-sans text-slate-900 overflow-y-auto py-8 sm:py-12 px-4 sm:px-6">
+      <div className="w-full max-w-[450px] my-auto bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
         
         {/* Header Section */}
         <div className="flex justify-center mb-6">
