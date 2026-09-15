@@ -120,20 +120,32 @@ async def chat_interaction(request: ChatRequest):
                 
                 try:
                     vision_llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", google_api_key=settings.GEMINI_API_KEY)
-                    vision_msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "You are a medical image analyst. Carefully describe what you see in this image in clinical terms. Note any visible symptoms, skin conditions, wounds, rashes, or abnormalities."}, {"type": "image_url", "image_url": {"url": image_url}}])])
+                    vision_msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "You are a medical image analyst. Carefully describe what you see in this image in clinical terms. Note any visible symptoms, skin conditions, wounds, rashes, or abnormalities. If the image is completely unrelated to medicine or health (e.g., a car, scenery, animal), explicitly state: 'This image appears to be unrelated to health or medicine. It shows [description].'"}, {"type": "image_url", "image_url": {"url": image_url}}])])
                 except Exception as primary_err:
                     print(f"Primary Gemini key failed: {primary_err}")
                     # Fallback to verified working legacy key if the Render environment key is blocked or quota exceeded
                     fallback_key = "AQ.Ab8RN6Jhid4_90s" + "q94cF5psTPYRI3dJ" + "Y8pCAw7_8i4R3rrfDPA"
                     vision_llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", google_api_key=fallback_key)
-                    vision_msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "You are a medical image analyst. Carefully describe what you see in this image in clinical terms. Note any visible symptoms, skin conditions, wounds, rashes, or abnormalities."}, {"type": "image_url", "image_url": {"url": image_url}}])])
+                    vision_msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "You are a medical image analyst. Carefully describe what you see in this image in clinical terms. Note any visible symptoms, skin conditions, wounds, rashes, or abnormalities. If the image is completely unrelated to medicine or health (e.g., a car, scenery, animal), explicitly state: 'This image appears to be unrelated to health or medicine. It shows [description].'"}, {"type": "image_url", "image_url": {"url": image_url}}])])
 
                 vision_raw = vision_msg.content
                 if isinstance(vision_raw, list):
                     vision_text = " ".join(p['text'] if isinstance(p, dict) and 'text' in p else str(p) for p in vision_raw)
                 else:
                     vision_text = str(vision_raw)
-                vision_context = f"\n\n[The patient has uploaded a medical image. Clinical description: {vision_text}. IMPORTANT OVERRIDE: For this response ONLY, you are allowed to be longer. FIRST, explicitly tell the patient what symptoms or conditions you detect in the image based on the clinical description. THEN, ask exactly 5 numbered follow-up questions to gather important details. Do not hide the diagnosis—tell them what you see immediately.]"
+                vision_context = f"""\n\n[SYSTEM: The patient has uploaded an image. Gemini Medical Vision Analysis: {vision_text}
+
+YOUR MANDATORY RESPONSE FORMAT FOR THIS MESSAGE:
+1. Start with 1-2 sentences telling the patient what you detected from their image (symptoms, condition, injury, etc.)
+2. If image is non-medical: politely say it is unrelated and ask them to upload a medical photo. STOP.
+3. If image IS medical: You MUST ask EXACTLY these 5 numbered questions on separate lines:
+   1. [Question about duration/how long]
+   2. [Question about pain level 0-10]
+   3. [Question about associated symptoms]
+   4. [Question about medical history relevant to condition]
+   5. [Question about any treatment already tried]
+
+DO NOT skip any question. DO NOT combine questions. Each must be on its own numbered line.]"""
             except Exception as gemini_err:
                 print(f"Gemini vision failed entirely: {gemini_err}")
                 try:
