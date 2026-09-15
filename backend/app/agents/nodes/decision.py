@@ -18,8 +18,8 @@ def decision_node(state: AgentState) -> dict:
     
     try:
         # Initialize LLM
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY, temperature=0.1)
+        from langchain_groq import ChatGroq
+        llm = ChatGroq(api_key=settings.GROQ_API_KEY, model_name="qwen/qwen3.8-27b", temperature=0.1)
         
         # Define structured output
         structured_llm = llm.with_structured_output(DecisionSchema)

@@ -84,8 +84,8 @@ async def get_session_messages(session_id: str):
 @router.post("/chat", response_model=ChatResponse)
 async def chat_interaction(request: ChatRequest):
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY)
+        from langchain_groq import ChatGroq
+        llm = ChatGroq(api_key=settings.GROQ_API_KEY, model_name="qwen/qwen3.8-27b")
         
         system_prompt = "You are VitalGate, a helpful, empathetic medical AI voice assistant. You are currently chatting with a patient to gather information about their symptoms before generating a formal triage report. Ask clarifying questions if needed. Be concise.\n\n"
         
