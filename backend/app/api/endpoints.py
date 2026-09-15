@@ -111,6 +111,7 @@ async def chat_interaction(request: ChatRequest):
         vision_context = ""
         if request.image_data:
             try:
+                # Try Gemini vision first
                 from langchain_google_genai import ChatGoogleGenerativeAI
                 vision_llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY)
                 image_url = request.image_data if request.image_data.startswith("data:image") else f"data:image/jpeg;base64,{request.image_data}"
@@ -121,9 +122,29 @@ async def chat_interaction(request: ChatRequest):
                 else:
                     vision_text = str(vision_raw)
                 vision_context = f"\n\n[The patient has uploaded a medical image. Clinical description: {vision_text}]"
-            except Exception as e:
-                vision_context = f"\n\n[The patient uploaded an image. Vision analysis was unavailable. Please ask the patient to describe what the image shows.]"
-                print(f"Vision error: {e}")
+            except Exception as gemini_err:
+                print(f"Gemini vision failed: {gemini_err}")
+                try:
+                    # Fallback: HuggingFace free BLIP image captioning (no API key needed)
+                    import requests as req
+                    import base64
+                    raw_b64 = request.image_data.split(',')[1] if ',' in request.image_data else request.image_data
+                    img_bytes = base64.b64decode(raw_b64)
+                    hf_response = req.post(
+                        "https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base",
+                        headers={"Content-Type": "application/octet-stream"},
+                        data=img_bytes,
+                        timeout=15
+                    )
+                    if hf_response.status_code == 200:
+                        hf_result = hf_response.json()
+                        caption = hf_result[0].get('generated_text', '') if isinstance(hf_result, list) else str(hf_result)
+                        vision_context = f"\n\n[The patient has uploaded a medical image. Image description: {caption}. Please provide medical guidance based on this description.]"
+                    else:
+                        vision_context = f"\n\n[The patient has uploaded a medical image that could not be automatically analyzed. Please ask the patient to describe their visible symptoms in detail.]"
+                except Exception as hf_err:
+                    print(f"HuggingFace vision failed: {hf_err}")
+                    vision_context = f"\n\n[The patient has uploaded a medical image that could not be automatically analyzed. Please ask the patient to describe their visible symptoms in detail.]"
 
         messages = [SystemMessage(content=system_prompt)]
         
