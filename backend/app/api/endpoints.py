@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from app.agents.graph import triage_app
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_groq import ChatGroq
 from app.core.config import settings
 from app.db import get_supabase
@@ -114,10 +114,16 @@ async def chat_interaction(request: ChatRequest):
                 from langchain_google_genai import ChatGoogleGenerativeAI
                 vision_llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY)
                 image_url = request.image_data if request.image_data.startswith("data:image") else f"data:image/jpeg;base64,{request.image_data}"
-                msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "Describe this medical image briefly."}, {"type": "image_url", "image_url": {"url": image_url}}])])
-                vision_context = f"\n\n[Patient uploaded an image: {msg.content}]"
+                vision_msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "You are a medical image analyst. Carefully describe what you see in this image in clinical terms. Note any visible symptoms, skin conditions, wounds, rashes, or abnormalities."}, {"type": "image_url", "image_url": {"url": image_url}}])])
+                vision_raw = vision_msg.content
+                if isinstance(vision_raw, list):
+                    vision_text = " ".join(p['text'] if isinstance(p, dict) and 'text' in p else str(p) for p in vision_raw)
+                else:
+                    vision_text = str(vision_raw)
+                vision_context = f"\n\n[The patient has uploaded a medical image. Clinical description: {vision_text}]"
             except Exception as e:
-                vision_context = f"\n\n[Patient uploaded an image but vision analysis failed]"
+                vision_context = f"\n\n[The patient uploaded an image. Vision analysis was unavailable. Please ask the patient to describe what the image shows.]"
+                print(f"Vision error: {e}")
 
         messages = [SystemMessage(content=system_prompt)]
         
@@ -129,7 +135,11 @@ async def chat_interaction(request: ChatRequest):
                         # Skip the current user message as we'll append it with vision_context below
                         if h.get('message') == request.message and h.get('sender') == 'user':
                             continue
-                        messages.append(HumanMessage(content=h.get('message', '')) if h.get('sender') == 'user' else SystemMessage(content=h.get('message', '')))
+                        # Use AIMessage for AI responses (not SystemMessage) - critical for correct memory
+                        if h.get('sender') == 'user':
+                            messages.append(HumanMessage(content=h.get('message', '')))
+                        else:
+                            messages.append(AIMessage(content=h.get('message', '')))
             except Exception:
                 pass
 
