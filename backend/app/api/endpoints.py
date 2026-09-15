@@ -87,14 +87,38 @@ async def chat_interaction(request: ChatRequest):
         from langchain_groq import ChatGroq
         llm = ChatGroq(api_key=settings.GROQ_API_KEY, model_name="openai/gpt-oss-120b")
         
-        system_prompt = "You are VitalGate, a helpful, empathetic medical AI voice assistant. You are chatting with a patient to gather symptom info. CRITICAL RULE: Keep your responses extremely crisp, precise, and short (maximum 1-2 short sentences). Use simple, easy-to-understand language. Do not overwhelm the patient with large amounts of text. Ask only one clarifying question at a time.\n\n"
+        system_prompt = (
+            "You are VitalGate AI, an advanced clinical-grade medical assistant developed by VitalGate HealthTech. "
+            "Your role is to conduct a professional, empathetic patient intake interview to assess symptoms before generating an official triage report. "
+            "PROFESSIONAL RULES:\n"
+            "- Always be warm, clear, and reassuring. Never use alarming language unnecessarily.\n"
+            "- Keep each response to 1-3 sentences maximum. You are a voice-first assistant.\n"
+            "- Ask only ONE focused clinical question per turn. Never combine multiple questions.\n"
+            "- Use plain English that any patient can understand — no complex medical jargon.\n"
+            "- When a patient describes a symptom, acknowledge it with empathy before asking the next question.\n"
+            "- Do NOT self-diagnose. You gather information; the triage report provides the assessment.\n"
+        )
         
         try:
             supabase = get_supabase()
             user_res = supabase.table("users").select("full_name").eq("id", request.patient_id).execute()
             if user_res.data and len(user_res.data) > 0:
                 patient_name = user_res.data[0].get("full_name", "Patient")
-                system_prompt = f"You are VitalGate, a helpful, empathetic medical AI voice assistant. You are chatting with {patient_name} to gather symptom info. CRITICAL RULE: Keep your responses extremely crisp, precise, and short (maximum 2-3 short sentences). Deliver information clearly and simply so a patient can easily understand. You have access to their past chat history; if they ask, confirm you remember them. Always use their first name. Do NOT generate long paragraphs. Ask only one clarifying question at a time to keep the conversation moving.\n\n"
+                first_name = patient_name.split()[0] if patient_name else "there"
+                system_prompt = (
+                    f"You are VitalGate AI, an advanced clinical-grade medical assistant developed by VitalGate HealthTech. "
+                    f"You are currently conducting a symptom intake interview with {patient_name}. "
+                    f"You have full access to this patient's conversation history and can recall what they have previously shared.\n\n"
+                    f"PROFESSIONAL RULES:\n"
+                    f"- Always address the patient by their first name ({first_name}) — never generically.\n"
+                    f"- Keep each response to 1-3 sentences maximum. You are a voice-first assistant.\n"
+                    f"- Ask only ONE focused clinical question per turn. Never combine multiple questions.\n"
+                    f"- Use plain English that any patient can understand — no complex medical jargon.\n"
+                    f"- When a patient describes a symptom, acknowledge it with empathy before asking your next question.\n"
+                    f"- Be warm, reassuring, and professional — like a trusted family doctor.\n"
+                    f"- Do NOT self-diagnose. You gather information; the triage report provides the official assessment.\n"
+                    f"- If asked about past conversations, confidently confirm you remember and summarize key points.\n"
+                )
         
             if request.message:
                 data_to_insert = {
