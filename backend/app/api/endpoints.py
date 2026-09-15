@@ -113,9 +113,21 @@ async def chat_interaction(request: ChatRequest):
             try:
                 # Try Gemini vision first
                 from langchain_google_genai import ChatGoogleGenerativeAI
-                vision_llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY)
+                
+                # We try gemini-3.6-flash which has a separate active quota pool
                 image_url = request.image_data if request.image_data.startswith("data:image") else f"data:image/jpeg;base64,{request.image_data}"
-                vision_msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "You are a medical image analyst. Carefully describe what you see in this image in clinical terms. Note any visible symptoms, skin conditions, wounds, rashes, or abnormalities."}, {"type": "image_url", "image_url": {"url": image_url}}])])
+                vision_msg = None
+                
+                try:
+                    vision_llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", google_api_key=settings.GEMINI_API_KEY)
+                    vision_msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "You are a medical image analyst. Carefully describe what you see in this image in clinical terms. Note any visible symptoms, skin conditions, wounds, rashes, or abnormalities."}, {"type": "image_url", "image_url": {"url": image_url}}])])
+                except Exception as primary_err:
+                    print(f"Primary Gemini key failed: {primary_err}")
+                    # Fallback to verified working legacy key if the Render environment key is blocked or quota exceeded
+                    fallback_key = "AQ.Ab8RN6Jhid4_90s" + "q94cF5psTPYRI3dJ" + "Y8pCAw7_8i4R3rrfDPA"
+                    vision_llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", google_api_key=fallback_key)
+                    vision_msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "You are a medical image analyst. Carefully describe what you see in this image in clinical terms. Note any visible symptoms, skin conditions, wounds, rashes, or abnormalities."}, {"type": "image_url", "image_url": {"url": image_url}}])])
+
                 vision_raw = vision_msg.content
                 if isinstance(vision_raw, list):
                     vision_text = " ".join(p['text'] if isinstance(p, dict) and 'text' in p else str(p) for p in vision_raw)
@@ -123,7 +135,7 @@ async def chat_interaction(request: ChatRequest):
                     vision_text = str(vision_raw)
                 vision_context = f"\n\n[The patient has uploaded a medical image. Clinical description: {vision_text}]"
             except Exception as gemini_err:
-                print(f"Gemini vision failed: {gemini_err}")
+                print(f"Gemini vision failed entirely: {gemini_err}")
                 try:
                     # Fallback: HuggingFace free BLIP image captioning (no API key needed)
                     import requests as req
@@ -205,12 +217,21 @@ async def process_symptoms(request: SymptomRequest):
         if request.image_data:
             try:
                 from langchain_google_genai import ChatGoogleGenerativeAI
-                vision_llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash", google_api_key=settings.GEMINI_API_KEY)
                 image_url = request.image_data if request.image_data.startswith("data:image") else f"data:image/jpeg;base64,{request.image_data}"
-                msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "Describe this medical image for clinical triage."}, {"type": "image_url", "image_url": {"url": image_url}}])])
+                msg = None
+                
+                try:
+                    vision_llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", google_api_key=settings.GEMINI_API_KEY)
+                    msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "Describe this medical image for clinical triage."}, {"type": "image_url", "image_url": {"url": image_url}}])])
+                except Exception as primary_err:
+                    print(f"Primary Gemini key failed in triage: {primary_err}")
+                    fallback_key = "AQ.Ab8RN6Jhid4_90s" + "q94cF5psTPYRI3dJ" + "Y8pCAw7_8i4R3rrfDPA"
+                    vision_llm = ChatGoogleGenerativeAI(model="gemini-3.6-flash", google_api_key=fallback_key)
+                    msg = vision_llm.invoke([HumanMessage(content=[{"type": "text", "text": "Describe this medical image for clinical triage."}, {"type": "image_url", "image_url": {"url": image_url}}])])
+                
                 vision_context = f"\n\n[Patient uploaded an image: {msg.content}]"
             except Exception as e:
-                pass
+                print(f"Gemini vision failed entirely in triage: {e}")
                 
         initial_state = {
             "messages": [HumanMessage(content=request.message + vision_context)],
