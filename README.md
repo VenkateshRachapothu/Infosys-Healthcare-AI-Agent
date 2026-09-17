@@ -75,3 +75,9 @@ To verify the application works end-to-end:
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
+
+## Author / Maintainer
+
+**Venkatesh Rachapothu**
+
+GitHub: [https://github.com/VenkateshRachapothu/Infosys-Healthcare-AI-Agent](https://github.com/VenkateshRachapothu/Infosys-Healthcare-AI-Agent)
